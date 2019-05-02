@@ -1475,7 +1475,7 @@ class Graph {
       let url;
 
       if (includeRoot && !includeChildren) {
-        url = 'api/data_api/getNode/' + db + '/' + rootURI;
+        url = `multinet/juniper/node?nodeId=${rootURI}`;
 
       } else {
         url = root ? 'api/data_api/graph/' + db + '/' + rootURI + '/' + includeRoot.toString() : 'api/data_api/graph/' + db;
