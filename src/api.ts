@@ -143,3 +143,25 @@ export async function getNodes(selectedDB, graph, info) {
 
     return result;
 }
+
+export async function getProperty(db, name, graph) {
+    console.log('getProperty()');
+
+    const url = 'api/data_api/property/' + db + '/' + name;
+    const postContent = JSON.stringify({ 'treeNodes': graph ? graph.nodes.map((n) => { return n.uuid; }) : [''] });
+
+    const result = await new Promise((resolve, reject) => {
+        json(url)
+            .header('Content-Type', 'application/json')
+            .post(postContent, (error, data) => {
+                if (error) {
+                    reject(error);
+                    return;
+                }
+
+                resolve(data);
+            });
+    });
+
+    return result;
+}

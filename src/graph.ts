@@ -80,7 +80,7 @@ import {
   Config
 } from './config';
 
-import { getNode, getNodeTree, getNodes } from './api';
+import { getNode, getNodeTree, getNodes, getProperty } from './api';
 
 import * as menu from './menu';
 import * as tooltip from './toolTip';
@@ -299,7 +299,7 @@ class Graph {
 
     });
 
-    events.on(ATTR_COL_ADDED, (evt, info) => {
+    events.on(ATTR_COL_ADDED, async (evt, info) => {
       if (info.remove) {
         this.tableManager.colOrder.splice(this.tableManager.colOrder.indexOf(info.name), 1);
 
@@ -310,80 +310,66 @@ class Graph {
         events.fire(COL_ORDER_CHANGED_EVENT);
       } else {
 
-        const url = 'api/data_api/property/' + info.db + '/' + info.name;
-        console.log('url is ', url);
+        const resultObj = await getProperty(info.db, info.name, this.graph);
 
-        const postContent = JSON.stringify({ 'treeNodes': this.graph ? this.graph.nodes.map((n) => { return n.uuid; }) : [''] });
+        const nodes = resultObj.results;
+
+        const dataValues = nodes.map((e) => {
+          const node = this.graph.nodes.find((nn) => nn.uuid === e.uuid);
+          return isNaN(+e.value) ? { 'value': e.value, 'aggregated': node.layout === layout.aggregated } : { 'value': +e.value, 'aggregated': node.layout === layout.aggregated };
+        });;
+
+        //infer type here:
+        const type = typeof dataValues[0].value === 'number' ? VALUE_TYPE_INT : VALUE_TYPE_STRING;
+        //Add fake vector here:
+        const arrayVector = arrayVec.create(type);
+        arrayVector.desc.name = info.name;
 
 
-        json(url)
-          .header('Content-Type', 'application/json')
-          .post(postContent, (error, resultObj: any) => {
-            if (error) {
-              throw error;
+        arrayVector.dataValues = dataValues;
+        arrayVector.idValues = nodes.map((e) => { return e.uuid; });
+
+        arrayVector.desc.value.range = [min(arrayVector.dataValues, (d) => d.value), max(arrayVector.dataValues, (d) => d.value)];
+
+        //if it's not already in there:
+        if (this.tableManager.adjMatrixCols.filter((a: any) => { return a.desc.name === arrayVector.desc.name; }).length < 1) {
+          this.tableManager.adjMatrixCols = this.tableManager.adjMatrixCols.concat(arrayVector); //store array of vectors
+        }
+
+        //if it's not already in there:
+        if (this.tableManager.colOrder.filter((a: any) => { return a === arrayVector.desc.name; }).length < 1) {
+          this.tableManager.colOrder = this.tableManager.colOrder.concat([arrayVector.desc.name]); // store array of names
+        }
+
+        //sort colOrder so that the order is graphEdges, adjMatrix, then attributes. adjMatrix col are sorted by desc degree;
+        this.tableManager.colOrder.sort((a, b) => {
+
+          const arrayVecA = this.tableManager.adjMatrixCols.find((c) => c.desc.name === a);
+          const arrayVecB = this.tableManager.adjMatrixCols.find((c) => c.desc.name === b);
+
+          if (arrayVecA.desc.value.type === 'dataDensity') {
+            return -1;
+          }
+
+          if (arrayVecB.desc.value.type === 'dataDensity') {
+            return 1;
+          }
+
+          if (arrayVecA.desc.value.type === VALUE_TYPE_ADJMATRIX) {
+            if (arrayVecB.desc.value.type === VALUE_TYPE_ADJMATRIX) {
+              return arrayVecA.dataValues.length > arrayVecB.dataValues.length ? -1 : (arrayVecB.dataValues.length > arrayVecA.dataValues.length ? 1 : 0);
             }
+            return -1;
+          }
 
-            const nodes = resultObj.results;
+          if (arrayVecB.desc.value.type === VALUE_TYPE_ADJMATRIX) {
+            return 1;
+          }
 
-            const dataValues = nodes.map((e) => {
-              const node = this.graph.nodes.find((nn) => nn.uuid === e.uuid);
-              return isNaN(+e.value) ? { 'value': e.value, 'aggregated': node.layout === layout.aggregated } : { 'value': +e.value, 'aggregated': node.layout === layout.aggregated };
-            });;
+          return 0;
+        });
 
-            //infer type here:
-            const type = typeof dataValues[0].value === 'number' ? VALUE_TYPE_INT : VALUE_TYPE_STRING;
-            //Add fake vector here:
-            const arrayVector = arrayVec.create(type);
-            arrayVector.desc.name = info.name;
-
-
-            arrayVector.dataValues = dataValues;
-            arrayVector.idValues = nodes.map((e) => { return e.uuid; });
-
-            arrayVector.desc.value.range = [min(arrayVector.dataValues, (d) => d.value), max(arrayVector.dataValues, (d) => d.value)];
-
-            //if it's not already in there:
-            if (this.tableManager.adjMatrixCols.filter((a: any) => { return a.desc.name === arrayVector.desc.name; }).length < 1) {
-              this.tableManager.adjMatrixCols = this.tableManager.adjMatrixCols.concat(arrayVector); //store array of vectors
-            }
-
-            //if it's not already in there:
-            if (this.tableManager.colOrder.filter((a: any) => { return a === arrayVector.desc.name; }).length < 1) {
-              this.tableManager.colOrder = this.tableManager.colOrder.concat([arrayVector.desc.name]); // store array of names
-            }
-
-            //sort colOrder so that the order is graphEdges, adjMatrix, then attributes. adjMatrix col are sorted by desc degree;
-            this.tableManager.colOrder.sort((a, b) => {
-
-              const arrayVecA = this.tableManager.adjMatrixCols.find((c) => c.desc.name === a);
-              const arrayVecB = this.tableManager.adjMatrixCols.find((c) => c.desc.name === b);
-
-              if (arrayVecA.desc.value.type === 'dataDensity') {
-                return -1;
-              }
-
-              if (arrayVecB.desc.value.type === 'dataDensity') {
-                return 1;
-              }
-
-              if (arrayVecA.desc.value.type === VALUE_TYPE_ADJMATRIX) {
-                if (arrayVecB.desc.value.type === VALUE_TYPE_ADJMATRIX) {
-                  return arrayVecA.dataValues.length > arrayVecB.dataValues.length ? -1 : (arrayVecB.dataValues.length > arrayVecA.dataValues.length ? 1 : 0);
-                }
-                return -1;
-              }
-
-              if (arrayVecB.desc.value.type === VALUE_TYPE_ADJMATRIX) {
-                return 1;
-              }
-
-              return 0;
-            });
-
-            events.fire(TABLE_VIS_ROWS_CHANGED_EVENT);
-
-          });
-
+        events.fire(TABLE_VIS_ROWS_CHANGED_EVENT);
       }
 
     });
