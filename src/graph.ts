@@ -80,7 +80,7 @@ import {
   Config
 } from './config';
 
-import { getNode, getNodeTree } from './api';
+import { getNode, getNodeTree, getNodes } from './api';
 
 import * as menu from './menu';
 import * as tooltip from './toolTip';
@@ -246,30 +246,18 @@ class Graph {
       events.fire(ADJ_MATRIX_CHANGED, { 'db': info.db, 'name': info.name, 'uuid': info.id, 'label': info.label, 'remove': info.removeAdjMatrix, 'nodes': this.graph.nodes.filter((n) => n.visible && n.nodeType === nodeType.single).map((n) => n.uuid) });
     });
 
-    events.on(EXPAND_CHILDREN, (evt, info) => {
+    events.on(EXPAND_CHILDREN, async (evt, info) => {
 
-      const url = 'api/data_api/getNodes/' + this.selectedDB;
-      console.log('url is ', url);
+        const graph = await getNodes(this.selectedDB, this.graph, info);
 
-      const postContent = JSON.stringify({ 'rootNode': '', 'rootNodes': info.children.map((n) => { return n.uuid; }), 'treeNodes': this.graph.nodes.map((n) => { return n.uuid; }) });
+        console.log('data is ', graph);
 
+        this.mergeGraph(graph, false, true);
+        //find root nodes
+        const rootNode = this.graph.nodes.find((n) => n.uuid === graph.root);
+        this.postMergeUpdate();
 
-      json(url)
-        .header('Content-Type', 'application/json')
-        .post(postContent, (error, graph: any) => {
-          if (error) {
-            throw error;
-          }
-          console.log('data is ', graph);
-
-          this.mergeGraph(graph, false, true);
-          //find root nodes
-          const rootNode = this.graph.nodes.find((n) => n.uuid === graph.root);
-          this.postMergeUpdate();
-
-          this.updateAttrs();
-        });
-
+        this.updateAttrs();
     });
 
     events.on(GATHER_CHILDREN_EVENT, (evt, info) => {

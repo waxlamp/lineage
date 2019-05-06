@@ -116,3 +116,30 @@ export async function getNodeTree(graph, db, root, includeRoot) {
 
     return result;
 }
+
+export async function getNodes(selectedDB, graph, info) {
+    console.log('getNodes()');
+
+    const url = `api/data_api/getNodes/${selectedDB}`;
+
+    const postContent = JSON.stringify({
+        rootNode: '',
+        rootNodes: info.children.map((n) => n.uuid),
+        treeNodes: graph.nodes.map((n) => n.uuid)
+    });
+
+    const result = await new Promise((resolve, reject) => {
+        json(url)
+            .header('Content-Type', 'application/json')
+            .post(postContent, (error, graph) => {
+                if (error) {
+                    reject(error);
+                    return;
+                }
+
+                resolve(graph);
+            });
+    });
+
+    return result;
+}
