@@ -80,6 +80,8 @@ import {
   Config
 } from './config';
 
+import { getNode, getNodeTree } from './api';
+
 import * as menu from './menu';
 import * as tooltip from './toolTip';
 
@@ -1471,67 +1473,51 @@ class Graph {
       resolvePromise();
     } else {
 
-      const rootURI = encodeURIComponent(root);
-      let url;
-
+      let graph;
       if (includeRoot && !includeChildren) {
-        url = `multinet/juniper/node?nodeId=${rootURI}`;
-
+        graph = await getNode(root);
       } else {
-        url = root ? 'api/data_api/graph/' + db + '/' + rootURI + '/' + includeRoot.toString() : 'api/data_api/graph/' + db;
+        graph = await getNodeTree(this.graph, db, root, includeRoot);
       }
 
-      console.log('url is ', url);
+      console.log('data return is ', graph);
 
-      const postContent = JSON.stringify({ 'treeNodes': this.graph ? this.graph.nodes.map((n) => { return n.uuid; }) : [''] });
+      //Replace graph or create first graph
+      if (replace || !this.graph) {
 
-      json(url)
-        .header('Content-Type', 'application/json')
-        .post(postContent, (error, graph: any) => {
-          if (error) {
-            throw error;
-          }
-          console.log('data return is ', graph);
+        const newLinks = [];
+        //update indexes to contain refs of the actual nodes;
+        graph.links.forEach((link) => {
 
-          //Replace graph or create first graph
-          if (replace || !this.graph) {
+          link.source = graph.nodes.find((n) => n.uuid === link.source.uuid);
+          link.target = graph.nodes.find((n) => n.uuid === link.target.uuid);
 
-            const newLinks = [];
-            //update indexes to contain refs of the actual nodes;
-            graph.links.forEach((link) => {
-
-              link.source = graph.nodes.find((n) => n.uuid === link.source.uuid);
-              link.target = graph.nodes.find((n) => n.uuid === link.target.uuid);
-
-              if (link.source && link.target) {
-                const existingLink = newLinks.filter((l) => {
-                  return l.edge.data.uuid === link.edge.data.uuid;
-                });
-                //check for existing node
-                if (existingLink.length < 1) {
-                  newLinks.push(link);
-                }
-                ;
-              }
+          if (link.source && link.target) {
+            const existingLink = newLinks.filter((l) => {
+              return l.edge.data.uuid === link.edge.data.uuid;
             });
-            graph.links = newLinks;
-
-
-            this.graph = graph;
-
-          } else {
-            this.mergeGraph(graph, includeRoot, includeChildren);
-
-            //find root node
-            const rootNode = this.graph.nodes.find((n) => n.uuid === graph.root[0]);
+            //check for existing node
+            if (existingLink.length < 1) {
+              newLinks.push(link);
+            }
+            ;
           }
-
-          this.postMergeUpdate();
-
-
-
-          resolvePromise();
         });
+        graph.links = newLinks;
+
+
+        this.graph = graph;
+
+      } else {
+        this.mergeGraph(graph, includeRoot, includeChildren);
+
+        //find root node
+        const rootNode = this.graph.nodes.find((n) => n.uuid === graph.root[0]);
+      }
+
+      this.postMergeUpdate();
+
+      resolvePromise();
     }
 
     return p;
