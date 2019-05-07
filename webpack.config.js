@@ -181,7 +181,14 @@ function generateWebpack(options) {
         '/loggedinas': {
           target: 'http://localhost:9000',
           secure: false
-        }
+        },
+        '/multinet/*': {
+          target: 'http://localhost:9090',
+          secure: false,
+          pathRewrite: function (path) {
+            return '/api/v1/multinet/' + path.split('/').slice(2).join('/');
+          },
+        },
       },
       contentBase: resolve(__dirname, 'build')
     }
