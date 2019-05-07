@@ -80,7 +80,7 @@ import {
   Config
 } from './config';
 
-import { getNode, getNodeTree, getNodes, getProperty } from './api';
+import { getNode, getNodeTree, getNodes, getEdges, getProperty } from './api';
 
 import * as menu from './menu';
 import * as tooltip from './toolTip';
@@ -763,21 +763,15 @@ class Graph {
         const id = encodeURIComponent(cNode.uuid);
         allVecs.push({ vec: arrayVector, id, type: 'adjMatrixCol', uuid: cNode.uuid, label: cNode.label });
 
-        const url = 'api/data_api/edges/' + this.selectedDB + '/' + id;
+        const promise = getEdges(this.selectedDB, cNode.uuid, this.graph ? this.graph.nodes.map((n) => { return n.uuid; }) : ['']);
 
-        const postContent = JSON.stringify({ 'treeNodes': this.graph ? this.graph.nodes.map((n) => { return n.uuid; }) : [''] });
-
-        function jsonCall(url, callback) {
+        function jsonCall(callback) {
           setTimeout(function () {
-            json(url)
-              .header('Content-Type', 'application/json')
-              .post(postContent, (error, graph: any) => {
-                callback(null, graph);
-              });
+            promise.then((graph) => callback(null, graph));
           }, 0);
         }
 
-        fileQueue.defer(jsonCall, url);
+        fileQueue.defer(jsonCall);
       });
 
       let tableAttributes;
@@ -794,21 +788,15 @@ class Graph {
 
         allVecs.push({ vec: {}, type: 'attributeCol', name: attr });
 
-        const url = 'api/data_api/property/' + this.selectedDB + '/' + attr;
+        const promise = getProperty(this.selectedDB, attr, this.graph);
 
-        const postContent = JSON.stringify({ 'treeNodes': this.graph ? this.graph.nodes.map((n) => { return n.uuid; }) : [''] });
-
-        function jsonCall(url, callback) {
+        function jsonCall(callback) {
           setTimeout(function () {
-            json(url)
-              .header('Content-Type', 'application/json')
-              .post(postContent, (error, graph: any) => {
-                callback(null, graph);
-              });
+            promise.then((graph) => callback(null, graph));
           }, 0);
         }
 
-        fileQueue.defer(jsonCall, url);
+        fileQueue.defer(jsonCall);
       });
 
       fileQueue.awaitAll((error, attributes) => {
