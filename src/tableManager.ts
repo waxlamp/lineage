@@ -14,6 +14,8 @@ import { select } from 'd3-selection';
 
 import * as arrayVec from './ArrayVector';
 
+import { getEdges } from './api';
+
 import {
   json
 } from 'd3-request';
@@ -212,7 +214,7 @@ export default class TableManager {
             events.fire(TABLE_VIS_ROWS_CHANGED_EVENT);
     });
 
-    events.on(ADJ_MATRIX_CHANGED, (evt,info)=> {
+    events.on(ADJ_MATRIX_CHANGED, async (evt,info)=> {
 
       //append  col from adj matrix;
 
@@ -224,8 +226,6 @@ export default class TableManager {
 
         events.fire(COL_ORDER_CHANGED_EVENT);
       } else {
-
-
         //Add fake vector here:
         const arrayVector = arrayVec.create(info.type);
 
@@ -233,45 +233,30 @@ export default class TableManager {
         arrayVector.desc.value.label = [info.label];
 
 
+        const edges = await getEdges(info.db, info.uuid, info.nodes);
 
-        const id = encodeURIComponent(info.uuid);
+        arrayVector.dataValues = edges.nodes.map((e)=> {return e;});
+        arrayVector.idValues = edges.nodes.map((e)=> {return e.uuid;});
 
-       const url = 'api/data_api/edges/' + info.db + '/' + id;
+        //if it's not already in there:
+        if (this.adjMatrixCols.find((a:any )=> {return a.desc.name === arrayVector.desc.name; }) === undefined) {
+          this.adjMatrixCols =this.adjMatrixCols.concat(arrayVector); //store array of vectors
+        }
 
-       const postContent = JSON.stringify({ 'treeNodes': info.nodes});
+        // console.log(arrayVector);
+        //if it's not already in there:
+        if (this.colOrder.filter((a:any )=> {return a === arrayVector.desc.name; }).length<1) {
+          if (arrayVector.desc.value.type === 'adjMatrix') {
+             //find the last adjMatrix and append it there.
+          const lastAdjMatrixCol = this.adjMatrixCols.find((m)=>m.desc.value.type === 'adjMatrix');
+          const ind = this.colOrder.indexOf(lastAdjMatrixCol.desc.name);
+          this.colOrder.splice(ind,0,arrayVector.desc.name); // store array of names
+          } else {
+            this.colOrder = this.colOrder.concat([arrayVector.desc.name]); // store array of names
+          }
+        }
 
-       console.log('edge url is ', url);
-              json(url)
-              .header('Content-Type', 'application/json')
-              .post(postContent, (error, edges: any) => {
-                if (error) {
-                  throw error;
-                }
-                arrayVector.dataValues = edges.nodes.map((e)=> {return e;});
-                arrayVector.idValues = edges.nodes.map((e)=> {return e.uuid;});
-
-                //if it's not already in there:
-                if (this.adjMatrixCols.find((a:any )=> {return a.desc.name === arrayVector.desc.name; }) === undefined) {
-                  this.adjMatrixCols =this.adjMatrixCols.concat(arrayVector); //store array of vectors
-                }
-
-                // console.log(arrayVector);
-                //if it's not already in there:
-                if (this.colOrder.filter((a:any )=> {return a === arrayVector.desc.name; }).length<1) {
-                  if (arrayVector.desc.value.type === 'adjMatrix') {
-                     //find the last adjMatrix and append it there.
-                  const lastAdjMatrixCol = this.adjMatrixCols.find((m)=>m.desc.value.type === 'adjMatrix');
-                  const ind = this.colOrder.indexOf(lastAdjMatrixCol.desc.name);
-                  this.colOrder.splice(ind,0,arrayVector.desc.name); // store array of names
-                  } else {
-                    this.colOrder = this.colOrder.concat([arrayVector.desc.name]); // store array of names
-                  }
-                }
-
-                events.fire(TABLE_VIS_ROWS_CHANGED_EVENT);
-
-              });
-
+        events.fire(TABLE_VIS_ROWS_CHANGED_EVENT);
       }
 
     });

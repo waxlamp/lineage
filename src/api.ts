@@ -184,3 +184,29 @@ export async function getLabels(db) {
 
     return result;
 }
+
+export async function getEdges(db, uuid, nodes) {
+    console.log('getEdges()');
+
+    const url = `api/data_api/edges/${db}/${encodeURIComponent(uuid)}`;
+
+    const postContent = JSON.stringify({
+        treeNodes: nodes
+    });
+
+    const result = await new Promise((resolve, reject) => {
+        json(url)
+            .header('Content-Type', 'application/json')
+            .post(postContent, (error, data) => {
+                if (error) {
+                    reject(error);
+                    return;
+                }
+
+                resolve(data);
+            });
+    });
+
+    return result;
+
+}
