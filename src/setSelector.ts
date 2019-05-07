@@ -37,7 +37,7 @@ import IFamilyInfo from './tableManager';
 
 import { FAMILY_INFO_UPDATED, TABLE_VIS_ROWS_CHANGED_EVENT, GRAPH_ADJ_MATRIX_CHANGED, ADJ_MATRIX_CHANGED, ATTR_COL_ADDED } from './tableManager';
 
-import { getLabels, filter, query } from './api';
+import { getLabels, getProperties, filter, query } from './api';
 
 export const SUBGRAPH_CHANGED_EVENT = 'subgraph_changed';
 export const FILTER_CHANGED_EVENT = 'filter_changed_event';
@@ -640,26 +640,18 @@ class SetSelector {
 
     });
 
-    data.map((d) => {
+    data.map(async (d) => {
       this.populateTableRows('#' + d.name + '_body', d.nodes, this.headerInfo.length, d.name);
     });
 
-    const url2 = 'api/data_api/properties/' + this.selectedDB;
+    const resultObj = await getProperties(this.selectedDB);
 
-    json(url2, (error, resultObj: any) => {
-      if (error) {
-        throw error;
+    resultObj.properties.map((prop) => {
+      if (this.labelProperties[prop.label]) {
+        this.labelProperties[prop.label].push(prop.property);
+      } else {
+        this.labelProperties[prop.label] = [prop.property];
       }
-
-      resultObj.properties.map((prop) => {
-        if (this.labelProperties[prop.label]) {
-          this.labelProperties[prop.label].push(prop.property);
-        } else {
-          this.labelProperties[prop.label] = [prop.property];
-        }
-
-      });
-
     });
   }
 

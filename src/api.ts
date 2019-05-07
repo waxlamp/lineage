@@ -168,6 +168,23 @@ export function getProperty(db, name, graph) {
     return result;
 }
 
+export function getProperties(db) {
+    console.log('getProperties()');
+
+    const url = `api/data_api/properties/${db}`;
+
+    return new Promise((resolve, reject) => {
+        json(url, (error, data) => {
+            if (error) {
+                reject(error);
+                return;
+            }
+
+            resolve(data);
+        });
+    });
+}
+
 export function getLabels(db) {
     console.log('getLabels()');
 
