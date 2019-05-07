@@ -37,6 +37,8 @@ import IFamilyInfo from './tableManager';
 
 import { FAMILY_INFO_UPDATED, TABLE_VIS_ROWS_CHANGED_EVENT, GRAPH_ADJ_MATRIX_CHANGED, ADJ_MATRIX_CHANGED, ATTR_COL_ADDED } from './tableManager';
 
+import { getLabels } from './api';
+
 export const SUBGRAPH_CHANGED_EVENT = 'subgraph_changed';
 export const FILTER_CHANGED_EVENT = 'filter_changed_event';
 
@@ -543,39 +545,72 @@ class SetSelector {
   /**
    * Build the table and populate with list of families.
    */
-  public buildTables(db) {
+  async public buildTables(db) {
 
     this.selectedDB = db;
-    const self = this;
 
-    const url = 'api/data_api/labels/' + db;
+    const graphData = await getLabels(this.selectedDB);
 
-    json(url, (error, graphData: any) => {
+    console.log(graphData);
 
-      console.log(url, graphData);
-
-      const data = graphData.labels;
+    const data = graphData.labels;
 
 
-      const labels = data.filter((l) => l.name !== 'ConferencePaper' &&
-        l.name !== 'Inproceedings' && l.name !== 'Proceedings' &&
-        l.name !== 'Journal' && l.name !== '_Set_Node' && l.name !== 'Article' && l.name !== 'Publication')
-        .map((d) => { return { name: d.name, size: d.nodes.length }; });
+    const labels = data.filter((l) => l.name !== 'ConferencePaper' &&
+      l.name !== 'Inproceedings' && l.name !== 'Proceedings' &&
+      l.name !== 'Journal' && l.name !== '_Set_Node' && l.name !== 'Article' && l.name !== 'Publication')
+      .map((d) => { return { name: d.name, size: d.nodes.length }; });
 
-      this.build(labels);
+    this.build(labels);
 
-      // this.updateFilterPanel(labels);
-      let timer;
-      select('#searchBoxInput').on('input', (e) => {
-        const input = select('#searchBoxInput');
+    // this.updateFilterPanel(labels);
+    let timer;
+    select('#searchBoxInput').on('input', (e) => {
+      const input = select('#searchBoxInput');
+      if (input.property('value').length < 1) {
+        clearTimeout(timer);
+      } else {
+        clearTimeout(timer);
+        timer = setTimeout(() => {
+
+          const url = 'api/data_api/filter/' + this.selectedDB;
+          console.log('url is ', url);
+
+          const postContent = JSON.stringify({ 'searchString': input.property('value') });
+
+
+          json(url)
+            .header('Content-Type', 'application/json')
+            .post(postContent, (error, graph: any) => {
+              if (error) {
+                throw error;
+              }
+              console.log(graph);
+
+              const data = graph.labels;
+              const labels = data.map((d) => { return { name: d.name, size: d.nodes.length }; });
+
+
+              this.updateSetSelector(labels);
+              data.map((d) => {
+                this.populateTableRows('#' + d.name + '_body', d.nodes, this.headerInfo.length, d.name);
+              });
+            });
+
+        }, 500);
+      }
+    });
+
+    select('#queryInputForm').on('keypress', (e) => {
+      if (event.key === 'Enter') {
+        const input = select('#queryInputForm');
         if (input.property('value').length < 1) {
           clearTimeout(timer);
         } else {
           clearTimeout(timer);
           timer = setTimeout(() => {
 
-            const url = 'api/data_api/filter/' + this.selectedDB;
-            console.log('url is ', url);
+            const url = 'api/data_api/query/' + this.selectedDB;
 
             const postContent = JSON.stringify({ 'searchString': input.property('value') });
 
@@ -590,7 +625,7 @@ class SetSelector {
 
                 const data = graph.labels;
                 const labels = data.map((d) => { return { name: d.name, size: d.nodes.length }; });
-
+                console.log(data);
 
                 this.updateSetSelector(labels);
                 data.map((d) => {
@@ -600,112 +635,73 @@ class SetSelector {
 
           }, 500);
         }
-      });
 
-      select('#queryInputForm').on('keypress', (e) => {
-        if (event.key === 'Enter') {
-          const input = select('#queryInputForm');
-          if (input.property('value').length < 1) {
-            clearTimeout(timer);
-          } else {
-            clearTimeout(timer);
-            timer = setTimeout(() => {
+      }
 
-              const url = 'api/data_api/query/' + this.selectedDB;
+    });
 
-              const postContent = JSON.stringify({ 'searchString': input.property('value') });
+    select('#subGraphInputForm').on('keypress', (e) => {
+      if (event.key === 'Enter') {
+        const input = select('#subGraphInputForm');
+        if (input.property('value').length < 1) {
+          clearTimeout(timer);
+        } else {
+          clearTimeout(timer);
+          timer = setTimeout(() => {
+
+            const url = 'api/data_api/query/' + this.selectedDB;
+
+            const postContent = JSON.stringify({ 'searchString': input.property('value') });
 
 
-              json(url)
-                .header('Content-Type', 'application/json')
-                .post(postContent, (error, graph: any) => {
-                  if (error) {
-                    throw error;
-                  }
-                  console.log(graph);
+            json(url)
+              .header('Content-Type', 'application/json')
+              .post(postContent, (error, graph: any) => {
+                if (error) {
+                  throw error;
+                }
+                console.log('graph returned is ', graph);
 
-                  const data = graph.labels;
-                  const labels = data.map((d) => { return { name: d.name, size: d.nodes.length }; });
-                  console.log(data);
+                events.fire('subGraphQuery', {graph});
 
-                  this.updateSetSelector(labels);
-                  data.map((d) => {
-                    this.populateTableRows('#' + d.name + '_body', d.nodes, this.headerInfo.length, d.name);
-                  });
-                });
+                // const data = graph.labels;
+                // const labels = data.map((d) => { return { name: d.name, size: d.nodes.length }; });
+                // console.log(data);
 
-            }, 500);
-          }
+                // this.updateSetSelector(labels);
+                // data.map((d) => {
+                //   this.populateTableRows('#' + d.name + '_body', d.nodes, this.headerInfo.length, d.name);
+                // });
+              });
 
+          }, 500);
         }
 
-      });
+      }
 
-      select('#subGraphInputForm').on('keypress', (e) => {
-        if (event.key === 'Enter') {
-          const input = select('#subGraphInputForm');
-          if (input.property('value').length < 1) {
-            clearTimeout(timer);
-          } else {
-            clearTimeout(timer);
-            timer = setTimeout(() => {
+    });
 
-              const url = 'api/data_api/query/' + this.selectedDB;
+    data.map((d) => {
+      this.populateTableRows('#' + d.name + '_body', d.nodes, this.headerInfo.length, d.name);
+    });
 
-              const postContent = JSON.stringify({ 'searchString': input.property('value') });
+    const url2 = 'api/data_api/properties/' + this.selectedDB;
 
+    json(url2, (error, resultObj: any) => {
+      if (error) {
+        throw error;
+      }
 
-              json(url)
-                .header('Content-Type', 'application/json')
-                .post(postContent, (error, graph: any) => {
-                  if (error) {
-                    throw error;
-                  }
-                  console.log('graph returned is ', graph);
-
-                  events.fire('subGraphQuery', {graph});
-
-                  // const data = graph.labels;
-                  // const labels = data.map((d) => { return { name: d.name, size: d.nodes.length }; });
-                  // console.log(data);
-
-                  // this.updateSetSelector(labels);
-                  // data.map((d) => {
-                  //   this.populateTableRows('#' + d.name + '_body', d.nodes, this.headerInfo.length, d.name);
-                  // });
-                });
-
-            }, 500);
-          }
-
+      resultObj.properties.map((prop) => {
+        if (this.labelProperties[prop.label]) {
+          this.labelProperties[prop.label].push(prop.property);
+        } else {
+          this.labelProperties[prop.label] = [prop.property];
         }
-
-      });
-
-      data.map((d) => {
-        this.populateTableRows('#' + d.name + '_body', d.nodes, this.headerInfo.length, d.name);
-      });
-
-      const url2 = 'api/data_api/properties/' + this.selectedDB;
-
-      json(url2, (error, resultObj: any) => {
-        if (error) {
-          throw error;
-        }
-
-        resultObj.properties.map((prop) => {
-          if (this.labelProperties[prop.label]) {
-            this.labelProperties[prop.label].push(prop.property);
-          } else {
-            this.labelProperties[prop.label] = [prop.property];
-          }
-
-        });
 
       });
 
     });
-
   }
 
   private populateTableRows(tableDiv, rowData, numCols, name) {

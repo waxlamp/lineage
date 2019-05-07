@@ -165,3 +165,22 @@ export async function getProperty(db, name, graph) {
 
     return result;
 }
+
+export async function getLabels(db) {
+    console.log('getLabels()');
+
+    const url = `api/data_api/labels/${db}`;
+
+    const result = await new Promise((resolve, reject) => {
+        json(url, (error, data) => {
+            if (error) {
+                reject(error);
+                return;
+            }
+
+            resolve(data);
+        });
+    });
+
+    return result;
+}
