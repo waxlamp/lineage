@@ -43,6 +43,8 @@ export async function getNode (nodeId) {
             });
     });
 
+    console.log('graph', graph);
+
     const author = graph.data.nodes.nodes[0];
 
     const props = (() => {
@@ -91,7 +93,7 @@ export async function getNode (nodeId) {
     };
 }
 
-export async function getNodeTree(graph, db, root, includeRoot) {
+export function getNodeTree(graph, db, root, includeRoot) {
     let url = `api/data_api/graph/${db}`;
     if (root) {
         url += `/${encodeURIComponent(root)}/${includeRoot.toString()}`;
@@ -101,7 +103,7 @@ export async function getNodeTree(graph, db, root, includeRoot) {
         treeNodes: graph ? graph.nodes.map((n) => n.uuid) : ['']
     });
 
-    const result = await new Promise((resolve, reject) => {
+    const result = new Promise((resolve, reject) => {
         json(url)
             .header('Content-Type', 'application/json')
             .post(body, (error, graph) => {
@@ -117,7 +119,7 @@ export async function getNodeTree(graph, db, root, includeRoot) {
     return result;
 }
 
-export async function getNodes(selectedDB, graph, info) {
+export function getNodes(selectedDB, graph, info) {
     console.log('getNodes()');
 
     const url = `api/data_api/getNodes/${selectedDB}`;
@@ -128,7 +130,7 @@ export async function getNodes(selectedDB, graph, info) {
         treeNodes: graph.nodes.map((n) => n.uuid)
     });
 
-    const result = await new Promise((resolve, reject) => {
+    const result = new Promise((resolve, reject) => {
         json(url)
             .header('Content-Type', 'application/json')
             .post(postContent, (error, graph) => {
@@ -144,13 +146,13 @@ export async function getNodes(selectedDB, graph, info) {
     return result;
 }
 
-export async function getProperty(db, name, graph) {
+export function getProperty(db, name, graph) {
     console.log('getProperty()');
 
     const url = 'api/data_api/property/' + db + '/' + name;
     const postContent = JSON.stringify({ 'treeNodes': graph ? graph.nodes.map((n) => { return n.uuid; }) : [''] });
 
-    const result = await new Promise((resolve, reject) => {
+    const result = new Promise((resolve, reject) => {
         json(url)
             .header('Content-Type', 'application/json')
             .post(postContent, (error, data) => {
@@ -166,12 +168,12 @@ export async function getProperty(db, name, graph) {
     return result;
 }
 
-export async function getLabels(db) {
+export function getLabels(db) {
     console.log('getLabels()');
 
     const url = `api/data_api/labels/${db}`;
 
-    const result = await new Promise((resolve, reject) => {
+    const result = new Promise((resolve, reject) => {
         json(url, (error, data) => {
             if (error) {
                 reject(error);
@@ -185,7 +187,7 @@ export async function getLabels(db) {
     return result;
 }
 
-export async function getEdges(db, uuid, nodes) {
+export function getEdges(db, uuid, nodes) {
     console.log('getEdges()');
 
     const url = `api/data_api/edges/${db}/${encodeURIComponent(uuid)}`;
@@ -194,7 +196,7 @@ export async function getEdges(db, uuid, nodes) {
         treeNodes: nodes
     });
 
-    const result = await new Promise((resolve, reject) => {
+    const result = new Promise((resolve, reject) => {
         json(url)
             .header('Content-Type', 'application/json')
             .post(postContent, (error, data) => {
@@ -208,5 +210,4 @@ export async function getEdges(db, uuid, nodes) {
     });
 
     return result;
-
 }
