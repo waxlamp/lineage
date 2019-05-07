@@ -211,3 +211,23 @@ export function getEdges(db, uuid, nodes) {
 
     return result;
 }
+
+export function filter(db, search) {
+    const url = `api/data_api/filter/${db}`;
+    const postContent = JSON.stringify({
+        searchString: search
+    });
+
+    return new Promise((resolve, reject) => {
+        json(url)
+            .header('Content-Type', 'application/json')
+            .post(postContent, (error, data) => {
+                if (error) {
+                    reject(error);
+                    return;
+                }
+
+                resolve(data);
+            });
+    });
+}

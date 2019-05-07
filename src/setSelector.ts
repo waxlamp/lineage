@@ -37,7 +37,7 @@ import IFamilyInfo from './tableManager';
 
 import { FAMILY_INFO_UPDATED, TABLE_VIS_ROWS_CHANGED_EVENT, GRAPH_ADJ_MATRIX_CHANGED, ADJ_MATRIX_CHANGED, ATTR_COL_ADDED } from './tableManager';
 
-import { getLabels } from './api';
+import { getLabels, filter } from './api';
 
 export const SUBGRAPH_CHANGED_EVENT = 'subgraph_changed';
 export const FILTER_CHANGED_EVENT = 'filter_changed_event';
@@ -571,32 +571,17 @@ class SetSelector {
         clearTimeout(timer);
       } else {
         clearTimeout(timer);
-        timer = setTimeout(() => {
+        timer = setTimeout(async () => {
+          const graph = await filter(this.selectedDB, input.property('value'));
+          console.log(graph);
 
-          const url = 'api/data_api/filter/' + this.selectedDB;
-          console.log('url is ', url);
+          const data = graph.labels;
+          const labels = data.map((d) => { return { name: d.name, size: d.nodes.length }; });
 
-          const postContent = JSON.stringify({ 'searchString': input.property('value') });
-
-
-          json(url)
-            .header('Content-Type', 'application/json')
-            .post(postContent, (error, graph: any) => {
-              if (error) {
-                throw error;
-              }
-              console.log(graph);
-
-              const data = graph.labels;
-              const labels = data.map((d) => { return { name: d.name, size: d.nodes.length }; });
-
-
-              this.updateSetSelector(labels);
-              data.map((d) => {
-                this.populateTableRows('#' + d.name + '_body', d.nodes, this.headerInfo.length, d.name);
-              });
-            });
-
+          this.updateSetSelector(labels);
+          data.map((d) => {
+            this.populateTableRows('#' + d.name + '_body', d.nodes, this.headerInfo.length, d.name);
+          });
         }, 500);
       }
     });
