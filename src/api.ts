@@ -157,6 +157,98 @@ export function getProperties(db) {
     return promisifyGet(`api/data_api/properties/${db}`);
 }
 
+export async function getLabelsMN(workspace, graph, nodeTypes) {
+    let allNodes = [];
+    for (let i = 0; i < nodeTypes.length; i++) {
+        const nodeType = nodeTypes[i];
+
+        let offset = 0;
+        const limit = 20;
+
+        let done = false;
+        while (!done) {
+            const query = JSON.stringify({
+                query: `query {
+                    nodes (workspace: "${workspace}", graph: "${graph}", nodeType: "${nodeType}") {
+                        total
+                        nodes (offset: ${offset}, limit: ${limit}) {
+                            incoming {
+                                total
+                            }
+                            outgoing {
+                                total
+                            }
+                             properties (keys: ["_key", "name", "title", "label"]) {
+                                key
+                                value
+                            }
+                        }
+                    }
+                }`
+            });
+
+            const nodes = await new Promise((resolve, reject) => {
+                json('/multinet/graphql')
+                    .post(query, (error, result) => {
+                        if (error) {
+                            reject(error);
+                            return;
+                        }
+
+                        resolve(result);
+                    });
+            });
+
+            allNodes = allNodes.concat(nodes.data.nodes.nodes);
+
+            offset += nodes.data.nodes.nodes.length;
+            if (offset >= 20) {
+            //if (offset >= nodes.data.nodes.total) {
+                done = true;
+            }
+        }
+    }
+
+    // Partition the results by their labels.
+    let labels = {};
+    allNodes.forEach((node) => {
+        let props = {};
+        node.properties.forEach((prop) => {
+            if (prop.key === "label") {
+                if (prop.value.startsWith('chi')) {
+                    prop.value = 'CHI';
+                } else if (prop.value === 'tvcg') {
+                    prop.value = 'TVCG';
+                }
+            }
+
+            props[prop.key] = prop.value;
+        });
+
+        if (!labels[props.label]) {
+            labels[props.label] = {
+                name: props.label,
+                nodes: []
+            };
+        }
+
+        labels[props.label].nodes.push({
+            id: props._key,
+            title: props.title || props.name,
+            degree: node.incoming.total + node.outgoing.total
+            //degree: 4
+        });
+    });
+
+    const retval = {
+        labels: Object.values(labels)
+    };
+
+    console.log('getLabelsMN()', retval);
+
+    return retval;
+}
+
 export function getLabels(db) {
     console.log('getLabels()');
 
