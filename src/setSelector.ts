@@ -37,7 +37,7 @@ import IFamilyInfo from './tableManager';
 
 import { FAMILY_INFO_UPDATED, TABLE_VIS_ROWS_CHANGED_EVENT, GRAPH_ADJ_MATRIX_CHANGED, ADJ_MATRIX_CHANGED, ATTR_COL_ADDED } from './tableManager';
 
-import { getLabels, getLabelsMN, getProperties, filter, query } from './api';
+import { getLabels, getLabelsMN, getProperties, getPropertiesMN, filter, query } from './api';
 
 export const SUBGRAPH_CHANGED_EVENT = 'subgraph_changed';
 export const FILTER_CHANGED_EVENT = 'filter_changed_event';
@@ -645,7 +645,10 @@ class SetSelector {
       this.populateTableRows('#' + d.name + '_body', d.nodes, this.headerInfo.length, d.name);
     });
 
-    const resultObj = await getProperties(this.selectedDB);
+    //const resultObj = await getProperties(this.selectedDB);
+    const resultObj = await getPropertiesMN("dblp", this.selectedDB, ["author", "conference", "journal"]);
+
+    console.log('getProperties() result', resultObj);
 
     resultObj.properties.map((prop) => {
       if (this.labelProperties[prop.label]) {

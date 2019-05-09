@@ -151,6 +151,94 @@ export function getProperty(db, name, graph) {
     });
 }
 
+export async function getPropertiesMN(workspace, graph, nodeTypes) {
+    console.log('getPropertiesMN()');
+
+    let allNodes = [];
+    for (let i = 0; i < nodeTypes.length; i++) {
+        const nodeType = nodeTypes[i];
+
+        let offset = 0;
+        const limit = 20;
+
+        let done = false;
+        while (!done) {
+            const query = JSON.stringify({
+                query: `query {
+                    nodes (workspace: "${workspace}", graph: "${graph}", nodeType: "${nodeType}") {
+                        total
+                        nodes (offset: ${offset}, limit: ${limit}) {
+                            properties {
+                                key
+                                value
+                            }
+                        }
+                    }
+                }`
+            });
+
+            const nodes = await new Promise((resolve, reject) => {
+                json('/multinet/graphql')
+                    .post(query, (error, result) => {
+                        if (error) {
+                            reject(error);
+                            return;
+                        }
+
+                        resolve(result);
+                    });
+            });
+
+            allNodes = allNodes.concat(nodes.data.nodes.nodes.map(n => n.properties));
+
+            offset += nodes.data.nodes.nodes.length;
+            if (offset >= 20) {
+            //if (offset >= nodes.data.nodes.total) {
+                done = true;
+            }
+        }
+    }
+
+    // Collect unique property/label pairs.
+    let properties = {};
+    allNodes.forEach((node) => {
+        let label;
+        let props = {};
+        node.forEach(({key, value}) => {
+            if (key[0] === '_' || key === 'type') {
+                return;
+            } else if (key === 'label') {
+                label = value;
+            } else {
+                props[key] = value;
+            }
+        });
+
+        if (!properties[label]) {
+            properties[label] = new Set();
+        }
+
+        Object.keys(props).forEach((prop) => {
+            properties[label].add(prop);
+        });
+    });
+
+    // Unfold the sets into the format expected by Juniper.
+    let proplist = [];
+    Object.keys(properties).forEach((label) => {
+        Array.from(properties[label]).forEach((property) => {
+            proplist.push({
+                property,
+                label
+            });
+        });
+    });
+
+    return {
+        properties: proplist
+    };
+}
+
 export function getProperties(db) {
     console.log('getProperties()');
 
