@@ -44,14 +44,14 @@ export async function getNode (nodeId) {
                                 outgoing {
                                   total
                                 }
-                                properties (keys: ["type", "title", "_key"]) {
+                                properties (keys: ["type", "title", "label", "_key"]) {
                                     key
                                     value
                                 }
                             }
                         }
                     }
-                    properties (keys: ["type", "name"]) {
+                    properties (keys: ["type", "name", "label"]) {
                         key
                         value
                     }
@@ -86,7 +86,7 @@ export async function getNode (nodeId) {
 
     const authorData = {
         graphDegree: author.incoming.total,
-        label: 'Author',
+        label: props.label,
         title: props.name,
         uuid: author.key.split('/')[1]
     };
@@ -104,7 +104,7 @@ export async function getNode (nodeId) {
             source: authorData,
             target: {
                 graphDegree: link.source.outgoing.total,
-                label: 'Article',
+                label: props.label,
                 title: props.title,
                 uuid: props._key
             }
