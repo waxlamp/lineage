@@ -122,6 +122,10 @@ export async function getNode (nodeId) {
     };
 }
 
+export function getNodeTreeMN() {
+    throw new Error("undefined");
+}
+
 export function getNodeTree(graph, db, root, includeRoot) {
     let url = `api/data_api/graph/${db}`;
     if (root) {
@@ -133,6 +137,10 @@ export function getNodeTree(graph, db, root, includeRoot) {
     });
 }
 
+export function getNodesMN() {
+    throw new Error("undefined");
+}
+
 export function getNodes(selectedDB, graph, info) {
     console.log('getNodes()');
 
@@ -141,6 +149,10 @@ export function getNodes(selectedDB, graph, info) {
         rootNodes: info.children.map((n) => n.uuid),
         treeNodes: graph.nodes.map((n) => n.uuid)
     });
+}
+
+export function getPropertyMN() {
+    throw new Error("undefined");
 }
 
 export function getProperty(db, name, graph) {
@@ -343,6 +355,10 @@ export function getLabels(db) {
     return promisifyGet(`api/data_api/labels/${db}`);
 }
 
+export function getEdgesMN() {
+    throw new Error("undefined");
+}
+
 export function getEdges(db, uuid, nodes) {
     console.log('getEdges()');
 
@@ -351,12 +367,20 @@ export function getEdges(db, uuid, nodes) {
     });
 }
 
+export function filterMN() {
+    throw new Error("undefined");
+}
+
 export function filter(db, search) {
     console.log('filter()');
 
     return promisifyPost(`api/data_api/filter/${db}`, {
         searchString: search
     });
+}
+
+export function queryMN() {
+    throw new Error("undefined");
 }
 
 export function query(db, search) {
