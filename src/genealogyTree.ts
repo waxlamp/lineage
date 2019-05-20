@@ -265,7 +265,7 @@ class GenealogyTree {
           const menu = list.append('ul').attr('class', 'dropdown-menu');
 
 
-            let menuItems = menu.selectAll('.demoAttr')
+          let menuItems = menu.selectAll<HTMLAnchorElement, any>('.demoAttr')
             .data(['Aggregate','Hide','Expand']);
 
           menuItems = menuItems.enter()
@@ -641,7 +641,8 @@ class GenealogyTree {
 
 
   private update_legend() {
-    let legendIcons = select('#legendIcons').selectAll('.icons')
+    let legendIcons = select('#legendIcons')
+      .selectAll<SVGRectElement, any>('.icons')
       .data([this.primaryAttribute, this.secondaryAttribute]);
 
     const legendIconsEnter = legendIcons.enter().append('rect').classed('icons', true);
@@ -732,7 +733,7 @@ class GenealogyTree {
     }
 
     // // Attach node groups
-    let allFamilyBars = familyBarsGroup.selectAll('.familyBar')
+    let allFamilyBars = familyBarsGroup.selectAll<SVGLineElement, any>('.familyBar')
       .data(familyArray, function (d: Node) {
         return d.id;
       });
@@ -760,7 +761,7 @@ class GenealogyTree {
       .attr('opacity', .4);
 
 
-    let allFamilyLabels = familyBarsGroup.selectAll('.familyLabel')
+    let allFamilyLabels = familyBarsGroup.selectAll<SVGTextElement, any>('.familyLabel')
       .data(familyArray, function (d: Node) {
         return d.id;
       });
@@ -807,7 +808,7 @@ class GenealogyTree {
     const edgeGroup = select('#genealogyTree').select('#edges');
 
     //Only draw parentedges if target node is not hidden
-    let edgePaths = edgeGroup.selectAll('.edges')
+    let edgePaths = edgeGroup.selectAll<SVGPathElement, any>('.edges')
       .data(childParentEdges.filter(function (d) {
         return (!(d.target.hidden && !d.target.hasChildren));
       }), function (d: any) {
@@ -848,7 +849,7 @@ class GenealogyTree {
       .attr('opacity', 1)
       .attr('stroke-width', Config.glyphSize / 5);
 
-    let parentEdgePaths = edgeGroup.selectAll('.parentEdges')// only draw parent parent edges if neither parent is aggregated
+    let parentEdgePaths = edgeGroup.selectAll<SVGPathElement, any>('.parentEdges')// only draw parent parent edges if neither parent is aggregated
       .data(parentParentEdges
         .filter(function (d: Node) {
           return (!d.ma.hidden && !d.pa.hidden) || (!d.ma.affected && !d.pa.affected);
@@ -873,7 +874,7 @@ class GenealogyTree {
       .attr('stroke-width', Config.glyphSize / 5)
       .style('fill', 'none')
       // .transition(t)
-      .attr('d', (d) => {
+      .attr('d', (d: Node) => {
         return GenealogyTree.parentEdge(d, this.lineFunction);
       });
 
@@ -933,7 +934,7 @@ class GenealogyTree {
     }
 
     // Attach aggregateBars
-    let aggregateBars = highlightBarGroup.selectAll('.aggregateBar')
+    let aggregateBars = highlightBarGroup.selectAll<SVGRectElement, any>('.aggregateBar')
       .data(aggregateBarData, (d) => { return d.y; });
 
 
@@ -967,7 +968,7 @@ class GenealogyTree {
 
 
     // Attach highlight Bars
-    let allBars = highlightBarGroup.selectAll('.bars')
+    let allBars = highlightBarGroup.selectAll<SVGGElement, any>('.bars')
       .data(yData, (d) => { return d.id; });
 
     allBars.exit().remove();
@@ -1217,7 +1218,7 @@ class GenealogyTree {
 
 
     // Attach Couples Lines
-    let couplesLines = couplesLinesGroup.selectAll('.couplesLine')
+    let couplesLines = couplesLinesGroup.selectAll<SVGLineElement, any>('.couplesLine')
       .data(couplesData, (d) => { return d.id; });
 
     couplesLines.exit().remove();
@@ -1256,7 +1257,7 @@ class GenealogyTree {
     const kidGridsGroup = select('#genealogyTree').select('#kidGrids');
 
     // Attach backgroundRects
-    let backgroundRects = kidGridsGroup.selectAll('.kidGrids')
+    let backgroundRects = kidGridsGroup.selectAll<SVGRectElement, any>('.kidGrids')
       .data(couplesData, (d) => { return d.id; });
 
     backgroundRects.exit().remove();
@@ -1294,7 +1295,7 @@ class GenealogyTree {
     const nodeGroup = select('#genealogyTree').select('#nodes');
 
     // Attach node groups
-    let allNodes = nodeGroup.selectAll('.node')
+    let allNodes = nodeGroup.selectAll<SVGGElement, any>('.node')
       .data(nodes, function (d: Node) {
         return d.uniqueID;
       });
@@ -1311,7 +1312,7 @@ class GenealogyTree {
 
     //Position and Color all Nodes
     allNodes
-      .filter((d) => {
+      .filter((d: {hidden: boolean, hasChildren: boolean}) => {
         return !(d.hidden && !d.hasChildren);
       })
       .attr('transform', (node: Node) => {
@@ -1426,11 +1427,11 @@ class GenealogyTree {
     //AllNodes
     allNodes
       .classed('node', true)
-      .classed('collapsed', (d) => {
+      .classed('collapsed', (d: {hidden: boolean}) => {
         return d.hidden;
       });
 
-    allNodes.each(function (cell) {
+    allNodes.each(function (cell: Node) {
       self.renderNodeGroup(select(this), cell);
     });
   }
@@ -2490,7 +2491,9 @@ class GenealogyTree {
       .append('g')
       .classed('tooltipTriangle', true).append('rect');
 
-    let menuItems = menu.selectAll('text').data(actions);
+    let menuItems = menu
+      .selectAll<SVGGElement, any>('text')
+      .data(actions);
 
     const menuItemsEnter = menuItems.enter()
       .append('g').attr('class', 'menuItem');

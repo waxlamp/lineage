@@ -1109,7 +1109,9 @@ class Graph {
     const tableSelector = select('#pathViewerAccordion').select('#tableBody');
 
     // create a row for each object in the data
-    let rows = tableSelector.select('tbody').selectAll('tr')
+    let rows = tableSelector
+      .select('tbody')
+      .selectAll<HTMLTableRowElement, any>('tr')
       .data(end.path);
 
 
@@ -1121,7 +1123,7 @@ class Graph {
     rows = rowsEnter.merge(rows);
 
     // create a cell in each row for each column
-    let listItems = rows.selectAll('td')
+    let listItems = rows.selectAll<HTMLTableDataCellElement, any>('td')
       .data((d: any) => [d]);
 
     const listItemsEnter = listItems
@@ -3412,7 +3414,7 @@ class Graph {
     }
 
     // Attach aggregateBars
-    let aggregateBars = highlightBarGroup.selectAll('.aggregateBar')
+    let aggregateBars = highlightBarGroup.selectAll<SVGRectElement, any>('.aggregateBar')
       .data(aggregateBarData, (d) => { return d.yy; });
 
 
@@ -3432,7 +3434,7 @@ class Graph {
 
 
     // Attach highlight Bars
-    let allBars = highlightBarGroup.selectAll('.bars')
+    let allBars = highlightBarGroup.selectAll<SVGGElement, any>('.bars')
       .data(yData, (d) => { return d.id; });
 
     allBars.exit().remove();

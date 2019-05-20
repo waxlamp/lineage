@@ -42,6 +42,11 @@ import { getLabels, getLabelsMN, getProperties, getPropertiesMN, filter, query }
 export const SUBGRAPH_CHANGED_EVENT = 'subgraph_changed';
 export const FILTER_CHANGED_EVENT = 'filter_changed_event';
 
+interface TableHeader {
+    header: string
+    dataAttr: string
+}
+
 /**
  * Creates the family selector view
  */
@@ -60,7 +65,7 @@ class SetSelector {
 
   private labelProperties = {};
 
-  private headerInfo = [
+  private headerInfo: Array<TableHeader> = [
     { 'header': 'Name', 'dataAttr': 'title' },
     { 'header': 'Degree', 'dataAttr': 'degree' }];
 
@@ -492,8 +497,9 @@ class SetSelector {
     let headers = select(parentID)
       .select('#tableHead')
       .select('tr')
-      .selectAll('th')
+      .selectAll<HTMLTableDataCellElement, any>('th')
       .data(tableHeaders);
+
 
     const headerEnter = headers.enter()
       .append('th');
@@ -508,7 +514,7 @@ class SetSelector {
         const width = (i < 2 ? 10 : (90 / (tableHeaders.length - 2)));
         return width + '%';
       })
-      .on('click', function (d) {
+      .on('click', function (d: TableHeader) {
         const isAscending = select(this).classed('des');
         if (isAscending) {
           self.rows[name].sort(function (a, b) {
@@ -536,7 +542,7 @@ class SetSelector {
       });
 
     headers
-      .text(function (column) {
+      .text(function (column: TableHeader) {
         return column.header;
       })
       .style('text-align', 'center');
@@ -545,7 +551,7 @@ class SetSelector {
   /**
    * Build the table and populate with list of families.
    */
-  async public buildTables(db) {
+  public async buildTables(db) {
 
     this.selectedDB = db;
 
@@ -557,16 +563,18 @@ class SetSelector {
     const data = graphData.labels;
 
 
-    const labels = data.filter((l) => l.name !== 'ConferencePaper' &&
+    const labels = data.filter((l: any) => l.name !== 'ConferencePaper' &&
       l.name !== 'Inproceedings' && l.name !== 'Proceedings' &&
       l.name !== 'Journal' && l.name !== '_Set_Node' && l.name !== 'Article' && l.name !== 'Publication')
-      .map((d) => { return { name: d.name, size: d.nodes.length }; });
+      .map((d: any) => { return { name: d.name, size: d.nodes.length }; });
 
     this.build(labels);
 
     // this.updateFilterPanel(labels);
     let timer;
     select('#searchBoxInput').on('input', (e) => {
+        console.log('e', e);
+
       const input = select('#searchBoxInput');
       if (input.property('value').length < 1) {
         clearTimeout(timer);
@@ -574,10 +582,10 @@ class SetSelector {
         clearTimeout(timer);
         timer = setTimeout(async () => {
           const graph = await filter(this.selectedDB, input.property('value'));
-          console.log(graph);
+          console.log('graph', graph);
 
           const data = graph.labels;
-          const labels = data.map((d) => { return { name: d.name, size: d.nodes.length }; });
+          const labels = data.map((d: {name: string, nodes: Array<any>}) => { return { name: d.name, size: d.nodes.length }; });
 
           this.updateSetSelector(labels);
           data.map((d) => {
@@ -596,9 +604,10 @@ class SetSelector {
           clearTimeout(timer);
           timer = setTimeout(async () => {
             const graph = await query(this.selectedDB, input.property('value'));
-            console.log(graph);
+            console.log('query', graph);
 
             const data = graph.labels;
+
             const labels = data.map((d) => { return { name: d.name, size: d.nodes.length }; });
             console.log(data);
 
@@ -641,7 +650,7 @@ class SetSelector {
 
     });
 
-    data.map(async (d) => {
+    data.map(async (d: any) => {
       this.populateTableRows('#' + d.name + '_body', d.nodes, this.headerInfo.length, d.name);
     });
 
@@ -659,8 +668,7 @@ class SetSelector {
     });
   }
 
-  private populateTableRows(tableDiv, rowData, numCols, name) {
-
+  private populateTableRows(tableDiv: string, rowData, numCols, name) {
     //sort data alphabetically;
     // console.log(rowData.sort((a,b)=> {return a.title < b.title; }));
 
@@ -668,15 +676,17 @@ class SetSelector {
     //sort alphabetically
     rowData.sort((a, b) => { return a.title < b.title ? -1 : 1; });
 
+    //const tableSelector = select(tableDiv).select<HTMLTableElement>('#tableBody');
     const tableSelector = select(tableDiv).select('#tableBody');
-
+      console.log('tableSelector', tableSelector);
 
     tableSelector.select('.table')
       .attr('id', name + '_table');
 
 
     // create a row for each object in the data
-    let rows = tableSelector.select('tbody').selectAll('tr')
+    let rows = tableSelector.select('tbody')
+      .selectAll<HTMLTableRowElement, any>('tr')
       .data(rowData);
 
 
@@ -729,7 +739,7 @@ class SetSelector {
 
     //
     // create a cell in each row for each column
-    let cells = rows.selectAll('td')
+    let cells = rows.selectAll<HTMLTableDataCellElement, any>('td')
       .data((d: any) => {
         const baseValues = [
           // { 'name': d.id, 'value': undefined, 'type': 'button' },

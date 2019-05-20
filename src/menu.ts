@@ -120,7 +120,8 @@ public addMenu(data, actions = null) {
       .attr('class','tooltipTriangle')
       .append('rect');
 
-    let menuItems = menu.selectAll('text').data(actions);
+    let menuItems = menu.selectAll<SVGGElement, any>('text')
+        .data(actions);
 
     const menuItemsEnter = menuItems.enter()
       .append('g').attr('class', 'menuItem');
