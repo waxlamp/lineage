@@ -252,7 +252,9 @@ class FamilySelector {
 
 
     // create a row for each object in the data
-    let rows = select(tableSelector).select('tbody').selectAll('tr')
+    let rows = select(tableSelector)
+      .select('tbody')
+      .selectAll<HTMLTableRowElement, any>('tr')
       .data(rowData);
 
 
@@ -300,7 +302,7 @@ class FamilySelector {
 
     //
     // create a cell in each row for each column
-    let cells = rows.selectAll('td')
+    let cells = rows.selectAll<HTMLTableDataCellElement, any>('td')
       .data((d: any) => {
         const baseValues = [
         { 'id': d.id, 'value': undefined, 'type': 'button' },

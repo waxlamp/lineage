@@ -1013,7 +1013,8 @@ class AttributeTable {
 
     //HEADERS
     //Bind data to the col headers
-    let headers = select('#tableHeaders').selectAll('.header')
+    let headers = select('#tableHeaders')
+      .selectAll<SVGGElement, any>('.header')
       .data(this.colData.map((d: any, i) => {
         return {
           'name': d.name, 'data': d, 'ind': i, 'type': d.type, 'uuid':d.uuid,
@@ -1035,7 +1036,7 @@ class AttributeTable {
       .append('rect')
       .attr('class', 'titleBackground')
       .attr('height', 15)
-      .on('dblclick', ((d) => {
+      .on('dblclick', ((d: any) => {
         //reset this col width.
         this.customColWidths[d.name] = this.colWidths[d.type];
         this.update();
@@ -1056,17 +1057,17 @@ class AttributeTable {
     headers = headerEnter.merge(headers);
 
     headers.select('.titleBackground')
-      .attr('width', (d) => {
+      .attr('width', (d: any) => {
         const colWidth = this.customColWidths[d.name] || this.colWidths[d.type];
         return d.type === 'categorical' || d.type === 'dataDensity' ? colWidth + d.name.length * 7 : colWidth;
       })
-      .attr('transform', (d, i) => {
+      .attr('transform', (d: any, i) => {
         return 'translate(0,-10)';
       });
 
     headers
-      .attr('id', (d) => { return this.deriveID(d) + '_header'; })
-      .attr('transform', (d, i) => {
+      .attr('id', (d: any) => { return this.deriveID(d) + '_header'; })
+      .attr('transform', (d: any, i) => {
         const offset = this.colOffsets[i];
         return d.type === VALUE_TYPE_CATEGORICAL || d.type === VALUE_TYPE_ADJMATRIX || d.type === 'dataDensity' ? 'translate(' + offset + ',5) rotate(-40)' : 'translate(' + offset + ',0)';
       });
@@ -1077,11 +1078,11 @@ class AttributeTable {
         const labels = d.data.label ? d.data.label.length > 5 ? ['All'] : d.data.label : undefined;
         return d.data.label ? labels.reduce((acc,cValue)=> acc + ' ' + Config.icons[cValue],'') : '';
       })
-      .attr('transform', (d, i) => {
+      .attr('transform', (d: any, i) => {
         const offset = ((this.customColWidths[d.name] || this.colWidths[d.type]) / 2);
         return d.type === VALUE_TYPE_CATEGORICAL || d.type === VALUE_TYPE_ADJMATRIX || d.type === 'dataDensity' ? 'translate(' + offset + ',0) rotate(40)' : 'translate(' + offset + ',0)';
       })
-      .attr('text-anchor', (d) => {
+      .attr('text-anchor', (d: any) => {
         return d.type === VALUE_TYPE_CATEGORICAL || d.type === VALUE_TYPE_ADJMATRIX || d.type === 'dataDensity' ? 'start' : 'middle';
         // return (d.type === VALUE_TYPE_CATEGORICAL || d.type === 'dataDensity' || d.name.length>10) ? 'start' : 'middle';
       });
@@ -1099,11 +1100,11 @@ class AttributeTable {
         };
 
       })
-      .attr('transform', (d, i) => {
+      .attr('transform', (d: any, i) => {
         const offset = ((this.customColWidths[d.name] || this.colWidths[d.type]) / 2);
         return d.type === VALUE_TYPE_CATEGORICAL || d.type === VALUE_TYPE_ADJMATRIX || d.type === 'dataDensity' ? 'translate(' + (offset + 13) + ',-4)' : 'translate(' + offset + ',-15)';
       })
-      .attr('text-anchor', (d) => {
+      .attr('text-anchor', (d: any) => {
         return d.type === VALUE_TYPE_CATEGORICAL || d.type === VALUE_TYPE_ADJMATRIX || d.type === 'dataDensity' ? 'start' : 'middle';
         // return (d.type === VALUE_TYPE_CATEGORICAL || d.type === 'dataDensity' || d.name.length>10) ? 'start' : 'middle';
       });
@@ -1118,7 +1119,8 @@ class AttributeTable {
 
 
     //Bind data to the col header summaries
-    let colSummaries = select('#colSummaries').selectAll('.colSummary')
+    let colSummaries = select('#colSummaries')
+      .selectAll<SVGGElement, any>('.colSummary')
       .data(this.colData.map((d) => {
         return d;
       }), (d: any) => {
@@ -1204,7 +1206,8 @@ class AttributeTable {
 
     // TABLE
     //Bind data to the col groups
-    let cols = select('#columns').selectAll('.dataCols')
+    let cols = select('#columns')
+      .selectAll<SVGGElement, any>('.dataCols')
       .data(this.colData.map((d, i) => {
         return {
           'name': d.name, 'data': d.data, 'ind': i, 'type': d.type,
@@ -1230,12 +1233,12 @@ class AttributeTable {
     cols = colsEnter.merge(cols);//;
 
     cols.select('.starRect')
-      .attr('width', (d) => {
+      .attr('width', (d: any) => {
         const width = this.customColWidths[d.name] || this.colWidths[d.type];
         return (d.type === VALUE_TYPE_ADJMATRIX ? width : width + 10);
       })
       .attr('height', this.y.range()[1] + 40)
-      .attr('x', (d) => d.type === VALUE_TYPE_ADJMATRIX ? 0 : -5)
+      .attr('x', (d: {type: any}) => d.type === VALUE_TYPE_ADJMATRIX ? 0 : -5)
       .attr('y', -this.buffer + 3)
       .attr('class', (d) => { return 'starRect_' + this.deriveID(d); })
       .classed('starRect', true)
@@ -1372,7 +1375,7 @@ class AttributeTable {
     // .on('drag', lazyDrag)
     // .on('end', dragended));
 
-    colSummaries.each(function (cell) {
+    colSummaries.each(function (cell: any) {
       if (cell.type === VALUE_TYPE_CATEGORICAL || cell.type === VALUE_TYPE_ADJMATRIX) {
         self.renderCategoricalHeader(select(this), cell);
       } else if (cell.type === VALUE_TYPE_INT || cell.type === VALUE_TYPE_REAL) {
@@ -1532,7 +1535,8 @@ class AttributeTable {
     // console.log(Array.apply(null, {length: this.y.range()[1]}));
     //create table Lines
     // //Bind data to the cells
-    let rowLines = select('#columns').selectAll('.rowLine')
+    let rowLines = select('#columns')
+      .selectAll<SVGLineElement, any>('.rowLine')
       .data(this.allRows.map((d, i) => { return i; }));
 
     rowLines.exit().remove();
@@ -1565,8 +1569,8 @@ class AttributeTable {
 
 
     //Bind data to the cells
-    let cells = cols.selectAll('.cell')
-      .data((d) => {
+    let cells = cols.selectAll<SVGGElement, any>('.cell')
+      .data((d: any) => {
         return d.data.map((e, i) => {
           return {
             'y': this.rowOrder[i],
@@ -1620,7 +1624,7 @@ class AttributeTable {
 
     cellsEnter.attr('opacity', 1);
 
-    cells.each(function (cell) {
+    cells.each(function (cell: any) {
 
       if (cell.type === VALUE_TYPE_CATEGORICAL) {
         self.renderCategoricalCell(select(this), cell);
@@ -2055,7 +2059,8 @@ class AttributeTable {
       .append('g')
       .classed('tooltipTriangle', true).append('rect');
 
-    let menuItems = menu.selectAll('text').data(menuObjects);
+    let menuItems = menu.selectAll<SVGGElement, any>('text')
+      .data(menuObjects);
 
     const menuItemsEnter = menuItems.enter()
       .append('g').attr('class', 'menuItem');
